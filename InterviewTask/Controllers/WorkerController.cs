@@ -95,10 +95,10 @@ namespace InterviewTask.Controllers
         public async Task<IActionResult> UpdateEmployee(int id, EmployeeUpdateDTO dto)
         {
             Employee employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == id);
-            if(dto.Firstame!=null) employee.Name = dto.Firstame;
-            if(dto.Surname!=null) employee.Surname = dto.Surname;
-            if(dto.Birthdate!=null) employee.Birthdate = dto.Birthdate;
-            if(dto.Birthdate!=null) employee.DepartmentId = dto.DepartmentId;
+            employee.Name = dto.Firstame;
+            employee.Surname = dto.Surname;
+            employee.Birthdate = dto.Birthdate;
+            employee.DepartmentId = dto.DepartmentId;
             await _context.SaveChangesAsync();
             return StatusCode(200, $"{employee.Fullname} updated");
         }
