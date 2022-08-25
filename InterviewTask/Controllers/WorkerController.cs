@@ -54,13 +54,13 @@ namespace InterviewTask.Controllers
         }
 */
         [HttpGet("ALlWithDetails")]
-        public EmployeeListDTO GetAllEmployees()
+        public ALlEmployeeListDTO GetAllEmployees()
         {
             
             var query = _context.Employees.Include(d => d.Department).AsQueryable();
 
-            List<EmployeeReturnDTO> employeereturn = _mapper.Map<List<EmployeeReturnDTO>>(query.ToList());
-            EmployeeListDTO employeeListDTO = _mapper.Map<EmployeeListDTO>(employeereturn);
+            List<AllEmployeeDTO> employeereturn = _mapper.Map<List<AllEmployeeDTO>>(query.ToList());
+            ALlEmployeeListDTO employeeListDTO = _mapper.Map<ALlEmployeeListDTO>(employeereturn);
             return employeeListDTO;
         }
 
