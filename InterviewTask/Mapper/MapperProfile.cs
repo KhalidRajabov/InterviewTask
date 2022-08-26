@@ -17,11 +17,6 @@ namespace InterviewTask.Mapper
                 .ForMember(e => e.Birthdate, map => map.MapFrom(d => d.Birthdate))
                 .ForMember(e => e.Joined, map => map.MapFrom(d => d.CreateDate))
                 .ForMember(e => e.Department, map => map.MapFrom(d => d.Department));
-
-
-            CreateMap<List<EmployeeReturnDTO>, EmployeeListDTO>()
-                .ForMember(d => d.Employees, map => map.MapFrom(s => s.Count))
-                .ForMember(d => d.Workers, map => map.MapFrom(s => s));
             CreateMap<List<AllEmployeeDTO>, ALlEmployeeListDTO>()
                 .ForMember(d => d.Employees, map => map.MapFrom(s => s.Count))
                 .ForMember(d => d.AllEmployees, map => map.MapFrom(s => s));
