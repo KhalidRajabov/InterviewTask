@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using InterviewTask.DAL;
 using InterviewTask.DTO.EmployeeDTO;
-using InterviewTask.Filter;
+using InterviewTask.Extension;
+using InterviewTask.Helper;
 using InterviewTask.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 
 namespace InterviewTask.Controllers
@@ -23,50 +26,59 @@ namespace InterviewTask.Controllers
             _context = context;
             _mapper = mapper;
         }
- 
-      /*  [HttpGet("Filter")]
-        public List<EmployeeReturnDTO> Filter([FromQuery] Filtering filter)
-        {
-            
-            List<EmployeeReturnDTO> employeeReturnDTOs = new List<EmployeeReturnDTO>();
-            var query = _context.Employees.AsQueryable();
 
-            switch (filter.Filter)
+        /// <summary>
+        /// Filter Get method
+        /// </summary>
+        /// <param name="pageFilter"></param>
+        /// <param name="name"></param>
+        /// <param name="surname"></param>
+        /// <param name="depid"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<ActionResult<ICollection<Employee>>> GetFilteredEmployees([FromQuery] FilterEmployeeDTO f)
+        {
+
+            var employees = _context.Employees.AsQueryable();
+            if (f.Id != 0)
             {
-                case FilterEmployees.A_Z:
-                    employeeReturnDTOs = query.Select(e => new EmployeeReturnDTO
-                    {
-                        Fullname = e.Fullname,
-                        Joined = e.CreateDate.ToString("MM/dd/yyyy"),
-                        Birthdate = e.CreateDate.ToString("MM/dd/yyyy")
-                    }).ToList();
-                    break;
-                case FilterEmployees.Age:
-                    break;
-                case FilterEmployees.Joined:
-                    break;
-                default:
-                    break;
+                employees = employees.Where(e => e.Id == f.Id);
+            }
+            if (f.Name != null)
+            {
+                employees = employees.Where(e => e.Name.ToLower().Contains(f.Name.ToLower()));
+            }
+            if (f.Surname != null)
+            {
+                employees = employees.Where(e => e.Surname.ToLower().Contains(f.Surname.ToLower()));
+            }
+            if (f.DepartmentId != 0)
+            {
+                employees = employees.Where(e => e.DepartmentId == f.DepartmentId);
             }
 
+            var pagedList = await PageList<Employee>.CreateAsync(employees, f.pageFilter.PageNumber, f.pageFilter.PageSize);
+            Response.AddPaginationHeader(pagedList.CurrentPage, pagedList.PageSize, pagedList.TotalCount, pagedList.TotalPages);
 
-            return employeeReturnDTOs;
+            return pagedList.ToList();
         }
-*/
+
+
+
         [HttpGet("ALlWithDetails")]
         public ALlEmployeeListDTO GetAllEmployees()
         {
             
             var query = _context.Employees.Include(d => d.Department).AsQueryable();
-
             List<AllEmployeeDTO> employeereturn = _mapper.Map<List<AllEmployeeDTO>>(query.ToList());
             ALlEmployeeListDTO employeeListDTO = _mapper.Map<ALlEmployeeListDTO>(employeereturn);
             return employeeListDTO;
         }
 
         [HttpGet("{id}")]
-        public  IActionResult GetOne(int id)
+        public  IActionResult GetOne(int? id)
         {
+            if (id == null) return StatusCode(404, "Id is incorrect");
             Employee employee =  _context.Employees.Include(d=>d.Department).FirstOrDefault(p=>p.Id==id);
             if (employee == null) return StatusCode(404, $"Employee with the id of {id} does not exist");
             EmployeeReturnDTO employeeReturn = _mapper.Map<EmployeeReturnDTO>(employee);
@@ -74,8 +86,9 @@ namespace InterviewTask.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateEmployee(EmployeeCreateDTO DTO)
+        public async Task<IActionResult> CreateEmployee(EmployeeCreateDTO? DTO)
         {
+            if (DTO == null) return StatusCode(404,"Incorrect action");
             Employee employee = new Employee()
             {
                 Name = DTO.Firstname,
@@ -92,9 +105,11 @@ namespace InterviewTask.Controllers
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateEmployee(int id, EmployeeUpdateDTO dto)
+        public async Task<IActionResult> UpdateEmployee(int? id, EmployeeUpdateDTO dto)
         {
+            if (id == null) return StatusCode(404, "Id is incorrect");
             Employee employee = await _context.Employees.FirstOrDefaultAsync(e => e.Id == id);
+            if (employee == null) return StatusCode(404, $"User with the id {id} not found");
             employee.Name = dto.Firstame;
             employee.Surname = dto.Surname;
             employee.Birthdate = dto.Birthdate;
@@ -103,10 +118,13 @@ namespace InterviewTask.Controllers
             return StatusCode(200, $"{employee.Fullname} updated");
         }
 
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEmployee(int id)
+        public async Task<IActionResult> DeleteEmployee(int? id)
         {
+            if (id == null) return StatusCode(404, "Inocrrect id");
             Employee employee = await _context.Employees.FindAsync(id);
+            if (employee == null) return StatusCode(404, $"User with the id {id} not found");
             _context.Remove(employee);
             _context.SaveChanges();
             return Ok($"{employee.Name} deleted");
